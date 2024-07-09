@@ -26,12 +26,12 @@ https://postgrespro.ru/docs/postgresql/9.6/sql-createschema
 (В случае реализации процесса в Talend) В зависимости от мощностей рабочей станции – сделать загрузку из всех файлов одним потоком в параллели или отдельными потоками (может не хватить оперативной памяти для Java-heap);
 Для корректного обновления данных в таблицах детального слоя DS нужно выбрать правильную Update strategy и использовать следующие первичные ключи для таблиц фактов, измерений и справочников (должно быть однозначное уникальное значение, идентифицирующее каждую запись таблицы):
 
-Таблица	Первичный ключ
+Таблица	                Первичный ключ
 DS.FT_BALANCE_F	        ON_DATE, ACCOUNT_RK
 DS.FT_POSTING_F	        OPER_DATE, CREDIT_ACCOUNT_RK, DEBET_ACCOUNT_RK
 DS.MD_ACCOUNT_D	        DATA_ACTUAL_DATE, ACCOUNT_RK
-DS.MD_CURRENCY_D	    CURRENCY_RK, DATA_ACTUAL_DATE
-DS.MD_EXCHANGE_RATE_D	DATA_ACTUAL_DATE, CURRENCY_RK
+DS.MD_CURRENCY_D	      CURRENCY_RK, DATA_ACTUAL_DATE
+DS.MD_EXCHANGE_RATE_D	  DATA_ACTUAL_DATE, CURRENCY_RK
 DS.MD_LEDGER_ACCOUNT_S	LEDGER_ACCOUNT, START_DATE
 
 ### Технологические требования
