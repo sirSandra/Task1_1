@@ -6,12 +6,13 @@
 
 ### Исходные данные:
 Данные из 6 таблиц в виде excel-файлов:
-md_ledger_account_s – справочник балансовых счётов;
-md_account_d – информация о счетах клиентов;
-ft_balance_f – остатки средств на счетах;
-ft_posting_f – проводки (движения средств) по счетам;
-md_currency_d – справочник валют;
-md_exchange_rate_d – курсы валют.
+    md_ledger_account_s – справочник балансовых счётов;
+    md_account_d – информация о счетах клиентов;
+    ft_balance_f – остатки средств на счетах;
+    ft_posting_f – проводки (движения средств) по счетам;
+    md_currency_d – справочник валют;
+    md_exchange_rate_d – курсы валют.
+    
 Файл «Структура таблиц.docx» – поможет создать таблицы в детальном слое DS.
 
 ### Требования к реализации задачи:
@@ -26,13 +27,15 @@ https://postgrespro.ru/docs/postgresql/9.6/sql-createschema
 (В случае реализации процесса в Talend) В зависимости от мощностей рабочей станции – сделать загрузку из всех файлов одним потоком в параллели или отдельными потоками (может не хватить оперативной памяти для Java-heap);
 Для корректного обновления данных в таблицах детального слоя DS нужно выбрать правильную Update strategy и использовать следующие первичные ключи для таблиц фактов, измерений и справочников (должно быть однозначное уникальное значение, идентифицирующее каждую запись таблицы):
 
-Таблица	Первичный ключ
-DS.FT_BALANCE_F	        ON_DATE, ACCOUNT_RK
-DS.FT_POSTING_F	        OPER_DATE, CREDIT_ACCOUNT_RK, DEBET_ACCOUNT_RK
-DS.MD_ACCOUNT_D	        DATA_ACTUAL_DATE, ACCOUNT_RK
-DS.MD_CURRENCY_D	    CURRENCY_RK, DATA_ACTUAL_DATE
-DS.MD_EXCHANGE_RATE_D	DATA_ACTUAL_DATE, CURRENCY_RK
-DS.MD_LEDGER_ACCOUNT_S	LEDGER_ACCOUNT, START_DATE
+| Таблица                | Первичный ключ                           |
+|------------------------|------------------------------------------|
+| `DS.FT_BALANCE_F`      | `ON_DATE`, `ACCOUNT_RK`                  |
+| `DS.FT_POSTING_F`      | `OPER_DATE`, `CREDIT_ACCOUNT_RK`, `DEBET_ACCOUNT_RK` |
+| `DS.MD_ACCOUNT_D`      | `DATA_ACTUAL_DATE`, `ACCOUNT_RK`         |
+| `DS.MD_CURRENCY_D`     | `CURRENCY_RK`, `DATA_ACTUAL_DATE`        |
+| `DS.MD_EXCHANGE_RATE_D`| `DATA_ACTUAL_DATE`, `CURRENCY_RK`        |
+| `DS.MD_LEDGER_ACCOUNT_S`| `LEDGER_ACCOUNT`, `START_DATE`          |
+
 
 ### Технологические требования
 ETL-процесс по загрузке файлов вы можете сделать с помощью различных технологий, которые вам будут удобней. Возможные варианты технологий:
