@@ -25,7 +25,6 @@ default_args = {
     "owner": "AMaltsev",
     "start_date" : datetime (2024, 2, 25),
     "catchup":False
-    #,"retries" : 1
 }
 
 def log_event(event, table_name):
@@ -37,7 +36,7 @@ def log_event(event, table_name):
         conn.execute("""
             INSERT INTO logs.table_logs (dag_id, task_id, event, execution_date)
             VALUES (%s, %s, %s, %s);
-        """, ('POINT', table_name, event, datetime.now()))
+        """, ('TASK1_1', table_name, event, datetime.now()))
 
 def insert_data(table_name):
     # Логирование начала загрузки
@@ -47,7 +46,7 @@ def insert_data(table_name):
     time.sleep(5)
 
     # Чтение данных из CSV
-    df = pd.read_csv(f"/opt/airflow/files/{table_name}.csv", delimiter=";", encoding="UTF-8", infer_datetime_format=True)
+    df = pd.read_csv(f"/opt/airflow/files/{table_name}.csv", delimiter=";", encoding="UTF-8")
 
     # Приведение имен столбцов к нижнему регистру
     df.columns = [column.lower() for column in df.columns]
@@ -107,10 +106,10 @@ def insert_data(table_name):
     log_event('end', table_name)
 
 with DAG('TASK1_1',
-    default_args=default_args,
-    description="Загрузка данных",
-    schedule_interval = timedelta(days=1),
-    start_date = days_ago(1)) as dag:
+    default_args=default_args,  # Аргументы по умолчанию, применяемые ко всем задачам в DAG
+    description="Загрузка данных",  # Описание DAG
+    schedule_interval=timedelta(days=1),  # Интервал запуска DAG - каждый день
+    ) as dag:
     
     start = DummyOperator(
         task_id="start"
@@ -253,7 +252,7 @@ with DAG('TASK1_1',
                     END$$;
                     """
     )
-                   
+         
     ft_balance_f = PythonOperator(
         task_id="ft_balance_f",
         python_callable=insert_data, 
@@ -307,26 +306,41 @@ with DAG('TASK1_1',
                    'conn_id':'posgres_db'} ,       
         dag=dag
     )
+    
 
     task_pstgrs_crt_sch_logs = PostgresOperator(
-        task_id = 'task_cr_sch_logs', 
+        task_id = 'task_cr_sch_logs',
         postgres_conn_id = 'postgres_log',
         sql = """CREATE SCHEMA IF NOT EXISTS logs;"""
     )
 
     task_pstgrs_crt_tbl_logs = PostgresOperator(
-        task_id = 'task_cr_tbl_logs', 
-        postgres_conn_id = 'postgres_log',
-        sql = """drop table if exists logs.table_logs;
-                    create table logs.table_logs(
-                    id SERIAL PRIMARY KEY,
-                    dag_id VARCHAR(255),
-                    task_id VARCHAR(255),
-                    event VARCHAR(50),
-                    execution_date TIMESTAMP
-                    );
-                    """
-    )
+        task_id='task_cr_tbl_logs',
+        postgres_conn_id='postgres_log',
+        sql="""
+                DO $$
+                DECLARE
+                    table_exist int;
+                BEGIN
+                    SELECT 1 INTO table_exist
+                    FROM information_schema.tables
+                    WHERE table_schema = 'logs' AND table_name = 'table_logs';
+                        IF table_exist IS NULL THEN
+                        DROP TABLE IF EXISTS logs.table_logs;
+                        CREATE TABLE logs.table_logs (
+                            id SERIAL PRIMARY KEY,
+                            dag_id VARCHAR(255),
+                            task_id VARCHAR(255),
+                            event VARCHAR(50),
+                            execution_date TIMESTAMP
+                        );
+                    ELSE
+                        RAISE NOTICE 'md_exchange_rate_d уже существует';
+                    END IF;
+                END $$;
+                """
+)
+
 
     end = DummyOperator(
     task_id="end"
@@ -337,5 +351,5 @@ with DAG('TASK1_1',
     >> task_pstgrs_crt_sch_ds >> task_pstgrs_crt_sch_logs
     >> task_pstgrs_crt_tbl_ds >> task_pstgrs_crt_tbl_logs
     >> [ft_balance_f, ft_posting_f, md_account_d, md_currency_d, md_exchange_rate_d, md_ledger_account_s]
-    >> end
+    >> end 
     )
